@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PDF Viewer with Dropdown</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            padding: 20px;
+            max-width: 1000px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .control-panel {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #495057;
+        }
+        select, button {
+            width: 100%;
+            padding: 10px 15px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        select {
+            background-color: white;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23333' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            background-size: 16px;
+            appearance: none;
+            padding-right: 35px;
+        }
+        button {
+            background-color: #4285f4;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #3367d6;
+        }
+        #viewer-container {
+            width: 100%;
+            height: 75vh;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            margin-top: 20px;
+            position: relative;
+        }
+        #pdf-viewer {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        .no-viewer-message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: #6c757d;
+        }
+        .choice-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+        }
+        .choice-box {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            text-align: center;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .choice-btns {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .choice-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        .view-btn {
+            background: #4285f4;
+            color: white;
+        }
+        .download-btn {
+            background: #34a853;
+            color: white;
+        }
+        .choice-btn:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+        @media (max-width: 768px) {
+            #viewer-container {
+                height: 60vh;
+            }
+            .choice-btns {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>PDF Document Viewer</h1>
+    
+    <div class="control-panel">
+        <div class="form-group">
+            <label for="pdf-select">Select a document:</label>
+            <select id="pdf-select">
+                <option value="">-- Please choose a document --</option>
+                <!-- Update these options with your actual PDF files -->
+                <option value="pdfs/pdf1.pdf">Doc 1</option>
+                <option value="pdfs/pdf2.pdf">Doc 2</option>
+                <option value="pdfs/pdf3.pdf">Doc 3</option>
+                <option value="pdfs/pdf4.pdf">Doc 4</option>
+             <option value="pdfs/pdf5.pdf">Doc 5</option>
+            <option value="pdfs/pdf6.pdf">Doc 6</option>
+            <option value="pdfs/pdf7.pdf">Doc 7</option>
+             <option value="pdfs/pdf8.pdf">Doc 8</option>
+              <option value="pdfs/pdf9.pdf">Doc 9</option>                <option value="pdfs/pdf10.pdf">Doc 10</option> 
+              <option value="pdfs/pdf11.pdf">Doc 11</option>
+                                                                                
+            </select>
+        </div>
+        <button id="open-btn">Open Document</button>
+    </div>
+    
+    <div id="viewer-container">
+        <div id="initial-message" class="no-viewer-message">
+            <p>No document selected</p>
+            <p>Choose a document from the dropdown and click "Open Document"</p>
+        </div>
+        <iframe id="pdf-viewer" style="display: none;"></iframe>
+    </div>
+    
+    <div id="choice-modal" class="choice-modal">
+        <div class="choice-box">
+            <h3>How would you like to open this document?</h3>
+            <p id="selected-filename" style="font-weight: bold; margin: 10px 0;"></p>
+            <div class="choice-btns">
+                <button id="view-in-browser" class="choice-btn view-btn">View in Browser</button>
+                <button id="download-pdf" class="choice-btn download-btn">Download</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM elements
+        const pdfSelect = document.getElementById('pdf-select');
+        const openBtn = document.getElementById('open-btn');
+        const viewer = document.getElementById('pdf-viewer');
+        const initialMessage = document.getElementById('initial-message');
+        const choiceModal = document.getElementById('choice-modal');
+        const viewInBrowserBtn = document.getElementById('view-in-browser');
+        const downloadPdfBtn = document.getElementById('download-pdf');
+        const selectedFilename = document.getElementById('selected-filename');
+        
+        // Current selected PDF
+        let currentPDF = null;
+        
+        // Open button click handler
+        openBtn.addEventListener('click', function() {
+            const selectedValue = pdfSelect.value;
+            if (!selectedValue) {
+                alert('Please select a document first');
+                return;
+            }
+            
+            currentPDF = selectedValue;
+            selectedFilename.textContent = pdfSelect.options[pdfSelect.selectedIndex].text;
+            showChoiceModal();
+        });
+        
+        // Show choice modal
+        function showChoiceModal() {
+            choiceModal.style.display = 'flex';
+        }
+        
+        // Hide choice modal
+        function hideChoiceModal() {
+            choiceModal.style.display = 'none';
+        }
+        
+        // View in browser
+        viewInBrowserBtn.addEventListener('click', function() {
+            hideChoiceModal();
+            initialMessage.style.display = 'none';
+            viewer.style.display = 'block';
+            viewer.src = currentPDF + "#toolbar=0";
+        });
+        
+        // Download PDF
+        downloadPdfBtn.addEventListener('click', function() {
+            hideChoiceModal();
+            const link = document.createElement('a');
+            link.href = currentPDF;
+            link.download = currentPDF;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
+        
+        // Close modal when clicking outside
+        choiceModal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                hideChoiceModal();
+            }
+        });
+        
+        // Check if PDF can be displayed inline
+        function canDisplayPDF() {
+            return navigator.mimeTypes && 
+                   navigator.mimeTypes['application/pdf'] && 
+                   navigator.mimeTypes['application/pdf'].enabledPlugin;
+        }
+        
+        // Show warning if PDF viewing isn't supported
+        if (!canDisplayPDF()) {
+            const warning = document.createElement('div');
+            warning.style.background = '#fff3cd';
+            warning.style.padding = '15px';
+            warning.style.margin = '0 0 20px 0';
+            warning.style.borderRadius = '4px';
+            warning.style.color = '#856404';
+            warning.innerHTML = `
+                <strong>Note:</strong> Your browser may not support inline PDF viewing. 
+                The download option will always work.
+            `;
+            document.querySelector('.control-panel').prepend(warning);
+        }
+    </script>
+</body>
+</html>
